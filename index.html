@@ -265,7 +265,7 @@ input[aria-invalid="true"], .field[aria-invalid="true"] .choice, .agree[aria-inv
   <header class="hero">
     <div>
       <p class="eyebrow">Gift exchange</p>
-      <h1>Starbrew Secret Santa</h1>
+      <h1>Snowflake Secret Santa</h1>
       <p class="lede">Read the terms, then fill out the form to join the exchange.</p>
     </div>
     <svg class="flake" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
@@ -365,7 +365,7 @@ input[aria-invalid="true"], .field[aria-invalid="true"] .choice, .agree[aria-inv
 <script>
 (function () {
   // Where the form sends entries. Point this at your Worker route.
-  var ENDPOINT = 'https://starbrewss.crysthigpen.workers.dev';
+  var ENDPOINT = 'https://starbrewss.crysthigpen.workers.dev/api/santa';
 
   var $ = function (id) { return document.getElementById(id); };
   var form = $('santa-form');
