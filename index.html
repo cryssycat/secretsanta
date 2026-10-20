@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Snowflake Secret Santa</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Italiana&display=swap">
+<style>
+/* Layout: one left-aligned column. Hero with a turning snowflake, a three-date strip, the terms, then the form as the only raised card. */
+:root {
+  color-scheme: light;
+  --bg: #eaf2fa;
+  --bg2: #d6e6f6;
+  --card: #fbfdff;
+  --field: #f1f7fd;
+  --ink: #13253d;
+  --muted: #4d6279;
+  --line: #bfd5ea;
+  --accent: #2c6bc4;
+  --accent-ink: #ffffff;
+  --accent-soft: #dbeafa;
+  --danger: #b3263e;
+  --snow: #8db6e4;
+  --shadow: rgba(24, 66, 125, 0.28);
+  --font-display: "Italiana", "Cormorant Garamond", Georgia, serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1626;
+    --bg2: #12294a;
+    --card: #122238;
+    --field: #0d1b2e;
+    --ink: #e6f0fb;
+    --muted: #9db3cb;
+    --line: #29425f;
+    --accent: #7db4f2;
+    --accent-ink: #0b1626;
+    --accent-soft: #1b3659;
+    --danger: #ff8fa1;
+    --snow: #ffffff;
+    --shadow: rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1626;
+  --bg2: #12294a;
+  --card: #122238;
+  --field: #0d1b2e;
+  --ink: #e6f0fb;
+  --muted: #9db3cb;
+  --line: #29425f;
+  --accent: #7db4f2;
+  --accent-ink: #0b1626;
+  --accent-soft: #1b3659;
+  --danger: #ff8fa1;
+  --snow: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.55);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  margin: 0;
+  background: var(--bg) linear-gradient(180deg, var(--bg2), var(--bg) 70vh) no-repeat;
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+#snow {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.page {
+  position: relative;
+  z-index: 1;
+  max-width: 680px;
+  margin: 0 auto;
+  padding-block: calc(40px + env(safe-area-inset-top, 0px)) calc(72px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+/* Hero */
+.hero { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.hero > div { min-width: 0; }
+.eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 9vw, 4.2rem);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+.lede { margin: 14px 0 0; color: var(--muted); max-width: 40ch; }
+.flake { flex: none; width: clamp(84px, 22vw, 128px); height: auto; color: var(--accent); }
+.flake .spin { transform-origin: 0 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .flake .spin { animation: turn 90s linear infinite; }
+}
+@keyframes turn { to { transform: rotate(360deg); } }
+
+/* Dates */
+.dates {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.dates li { position: relative; padding-top: 18px; border-top: 1px solid var(--line); }
+.dates li::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 9px;
+  height: 9px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+.dates .d { display: block; font-family: var(--font-display); font-size: 1.9rem; line-height: 1.1; }
+.dates .l { display: block; margin-top: 4px; font-size: 0.88rem; color: var(--muted); }
+@media (max-width: 520px) {
+  .dates { grid-template-columns: 1fr; gap: 14px; }
+  .dates li { padding-top: 14px; display: flex; align-items: baseline; gap: 14px; }
+  .dates .l { margin-top: 0; }
+}
+
+/* Terms */
+.terms h2, .result h2 {
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+.terms ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.terms li { position: relative; padding-left: 26px; }
+.terms li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.62em;
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid var(--accent);
+  transform: rotate(45deg);
+}
+
+/* Form card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 28px 60px -36px var(--shadow);
+}
+.card h2 {
+  margin: 0 0 22px;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+form, .result { display: flex; flex-direction: column; gap: 24px; }
+.field { display: flex; flex-direction: column; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+label.lab, legend.lab {
+  padding: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.req {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+input[type="text"], textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--ink);
+  background: var(--field);
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+textarea { resize: vertical; min-height: 120px; }
+input::placeholder, textarea::placeholder { color: var(--muted); opacity: 0.75; }
+input[aria-invalid="true"], .field[aria-invalid="true"] .choice, .agree[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.err { margin: 0; font-size: 0.88rem; color: var(--danger); font-weight: 500; }
+
+.choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.choice, .agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: var(--field);
+  cursor: pointer;
+}
+.choice { align-items: center; }
+.choice input, .agree input { width: 18px; height: 18px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
+.choice input { margin: 0; }
+.choice:has(input:checked), .agree:has(input:checked) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.agrees { display: flex; flex-direction: column; gap: 10px; }
+.agree span { min-width: 0; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+.btn {
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  border: 1.5px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.07); }
+.btn:disabled { opacity: 0.7; cursor: progress; filter: none; }
+
+/* Result */
+.result h2 { margin: 0; outline: none; }
+.result p { margin: 0; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<canvas id="snow" aria-hidden="true"></canvas>
+
+<main class="page">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Gift exchange</p>
+      <h1>Starbrew Secret Santa</h1>
+      <p class="lede">Read the terms, then fill out the form to join the exchange.</p>
+    </div>
+    <svg class="flake" viewBox="-50 -50 100 100" aria-hidden="true" focusable="false">
+      <defs>
+        <g id="arm">
+          <path d="M0 0 L0 -44 M0 -15 L-8 -23 M0 -15 L8 -23 M0 -28 L-10 -37 M0 -28 L10 -37" />
+        </g>
+      </defs>
+      <g class="spin" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <use href="#arm" />
+        <use href="#arm" transform="rotate(60)" />
+        <use href="#arm" transform="rotate(120)" />
+        <use href="#arm" transform="rotate(180)" />
+        <use href="#arm" transform="rotate(240)" />
+        <use href="#arm" transform="rotate(300)" />
+        <circle r="4" fill="currentColor" stroke="none" />
+      </g>
+    </svg>
+  </header>
+
+  <ol class="dates" aria-label="Key dates">
+    <li><span class="d">Dec 1</span><span class="l">Forms sent out</span></li>
+    <li><span class="d">Dec 20</span><span class="l">Turn-ins due</span></li>
+    <li><span class="d">Dec 24</span><span class="l">Reveal day</span></li>
+  </ol>
+
+  <section class="terms" aria-labelledby="terms-h">
+    <h2 id="terms-h">Terms</h2>
+    <ul>
+      <li>Forms will be sent out to giftees on Dec 1st.</li>
+      <li>You are not to share your gift anywhere until after the reveal date, Dec 24.</li>
+      <li>Turn-ins should be sent in no later than Dec 20th.</li>
+      <li>You are to be respectful of those who entered, and accept your gift with grace.</li>
+      <li>Gifts will be tied to an Event character on TH. Please do not remove it.</li>
+      <li>Gifts will be sent out via TH. If you don't have one, please let Star know.</li>
+      <li>If you back out after being given a giftee, you will be removed from all giveaways for a year.</li>
+      <li>Submitting a form indicates you agree to these terms.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="form-h">
+    <div id="form-wrap">
+      <h2 id="form-h">Join the exchange</h2>
+      <form id="santa-form" novalidate>
+        <div class="field">
+          <label class="lab" for="discord">Discord username <span class="req">Required</span></label>
+          <input type="text" id="discord" name="discord" maxlength="64" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="yourname" aria-describedby="discord-err">
+          <p class="err" id="discord-err" aria-live="polite" hidden></p>
+        </div>
+
+        <fieldset class="field" id="want-field" aria-describedby="want-err">
+          <legend class="lab">I would like <span class="req">Required</span></legend>
+          <div class="choices">
+            <label class="choice" for="want-art"><input type="checkbox" id="want-art" name="want" value="Art"> Art</label>
+            <label class="choice" for="want-character"><input type="checkbox" id="want-character" name="want" value="Character"> Character</label>
+            <label class="choice" for="want-either"><input type="checkbox" id="want-either" name="want" value="Either"> Either</label>
+          </div>
+          <p class="err" id="want-err" aria-live="polite" hidden></p>
+        </fieldset>
+
+        <div class="field">
+          <label class="lab" for="likes">I like:</label>
+          <textarea id="likes" name="likes" maxlength="1500" placeholder="Colors, themes, characters, favorite things. Anything that helps your Santa."></textarea>
+        </div>
+
+        <div class="field" id="agree-field">
+          <div class="agrees">
+            <label class="agree" for="agree-terms">
+              <input type="checkbox" id="agree-terms" name="agree-terms">
+              <span>I agree to the terms listed above. <span class="req">Required</span></span>
+            </label>
+            <label class="agree" for="agree-ban">
+              <input type="checkbox" id="agree-ban" name="agree-ban">
+              <span>I agree that if I back out after the forms have been sent out, I will be banned from giveaways for a year. <span class="req">Required</span></span>
+            </label>
+          </div>
+          <p class="err" id="agree-err" aria-live="polite" hidden></p>
+        </div>
+
+        <div class="hp" aria-hidden="true">
+          <label for="website">Website</label>
+          <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+
+        <p class="err" id="send-err" role="alert" hidden></p>
+        <button type="submit" class="btn" id="submit-btn">Enter the exchange</button>
+      </form>
+    </div>
+
+    <div class="result" id="result" hidden>
+      <h2 id="result-h" tabindex="-1">You're in the exchange</h2>
+      <p>Your entry was received. Keep an eye on Discord for updates.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  // Where the form sends entries. Point this at your Worker route.
+  var ENDPOINT = '/api/santa';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('santa-form');
+  var discord = $('discord');
+  var art = $('want-art'), chr = $('want-character'), either = $('want-either');
+  var btn = $('submit-btn');
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function showErr(id, msg) {
+    var el = $(id);
+    el.textContent = msg;
+    el.hidden = !msg;
+  }
+
+  // "Either" and the specific choices exclude each other.
+  either.addEventListener('change', function () {
+    if (either.checked) { art.checked = false; chr.checked = false; }
+    showErr('want-err', '');
+    $('want-field').removeAttribute('aria-invalid');
+  });
+  [art, chr].forEach(function (box) {
+    box.addEventListener('change', function () {
+      if (box.checked) either.checked = false;
+      showErr('want-err', '');
+      $('want-field').removeAttribute('aria-invalid');
+    });
+  });
+  discord.addEventListener('input', function () {
+    showErr('discord-err', '');
+    discord.removeAttribute('aria-invalid');
+  });
+  ['agree-terms', 'agree-ban'].forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      showErr('agree-err', '');
+      $(id).closest('.agree').removeAttribute('aria-invalid');
+    });
+  });
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (btn.disabled) return;
+    showErr('send-err', '');
+    var first = null;
+
+    var name = discord.value.trim().replace(/^@/, '');
+    if (!name) {
+      showErr('discord-err', 'Enter your Discord username.');
+      discord.setAttribute('aria-invalid', 'true');
+      first = first || discord;
+    }
+
+    var picks = [art, chr, either].filter(function (b) { return b.checked; });
+    if (!picks.length) {
+      showErr('want-err', 'Pick at least one: Art, Character or Either.');
+      $('want-field').setAttribute('aria-invalid', 'true');
+      first = first || art;
+    }
+
+    var t = $('agree-terms'), b = $('agree-ban');
+    var missing = [];
+    if (!t.checked) { missing.push(t); t.closest('.agree').setAttribute('aria-invalid', 'true'); }
+    if (!b.checked) { missing.push(b); b.closest('.agree').setAttribute('aria-invalid', 'true'); }
+    if (missing.length) {
+      showErr('agree-err', missing.length === 2
+        ? 'Check both boxes to agree to the terms.'
+        : 'Check the remaining box to agree.');
+      first = first || missing[0];
+    }
+
+    if (first) { first.focus(); return; }
+
+    var payload = {
+      discord: name,
+      want: picks.map(function (p) { return p.value; }),
+      likes: $('likes').value.trim(),
+      agreeTerms: true,
+      agreeBan: true,
+      website: $('website').value
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (res) {
+        return res.json().catch(function () { return {}; }).then(function (data) {
+          return { ok: res.ok, status: res.status, data: data };
+        });
+      })
+      .then(function (r) {
+        if (r.ok) {
+          $('form-wrap').hidden = true;
+          $('result').hidden = false;
+          $('result-h').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+          $('result-h').focus({ preventScroll: true });
+        } else if (r.status === 409) {
+          showErr('discord-err', 'That Discord username has already entered.');
+          discord.setAttribute('aria-invalid', 'true');
+          discord.focus();
+        } else {
+          showErr('send-err', 'Your entry could not be sent. Try again, or message Star on Discord.');
+        }
+      })
+      .catch(function () {
+        showErr('send-err', 'Your entry could not be sent. Check your connection and try again.');
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = 'Enter the exchange';
+      });
+  });
+
+  // Falling snow
+  var cv = $('snow');
+  var ctx = cv.getContext('2d');
+  var w = 0, h = 0, flakes = [];
+  function snowColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue('--snow').trim() || '#fff';
+  }
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = snowColor();
+    for (var i = 0; i < flakes.length; i++) {
+      var f = flakes[i];
+      ctx.globalAlpha = f.a;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r, 0, 6.2832);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = window.innerWidth;
+    h = window.innerHeight;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var n = Math.min(90, Math.round(w / 16));
+    flakes = [];
+    for (var i = 0; i < n; i++) {
+      flakes.push({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: Math.random() * 2.2 + 0.8,
+        v: Math.random() * 0.6 + 0.25,
+        p: Math.random() * 6.28,
+        a: Math.random() * 0.4 + 0.35
+      });
+    }
+    draw();
+  }
+  function step(t) {
+    for (var i = 0; i < flakes.length; i++) {
+      var f = flakes[i];
+      f.y += f.v;
+      f.x += Math.sin(t / 1800 + f.p) * 0.25;
+      if (f.y > h + 4) { f.y = -4; f.x = Math.random() * w; }
+    }
+    draw();
+    requestAnimationFrame(step);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  if (!reduce) requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
